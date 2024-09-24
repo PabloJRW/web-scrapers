@@ -2,3 +2,4 @@
 .
 scrapenv
 *.pyc
+__pycache__

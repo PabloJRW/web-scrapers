@@ -6,29 +6,6 @@ from datetime import datetime
 import unicodedata
 
 
-def normalizar_nombres_columnas(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normaliza los nombres de las columnas de un DataFrame.
-    Convierte los nombres a minúsculas y elimina las tildes.
-
-    Parameters:
-    - df: pd.DataFrame
-        El DataFrame cuyas columnas se normalizarán.
-
-    Retorna:
-    - pd.DataFrame
-        El DataFrame con los nombres de columnas normalizados.
-    """
-    def remover_tildes(texto):
-        texto_normalizado = unicodedata.normalize('NFD', texto)
-        return ''.join(c for c in texto_normalizado if unicodedata.category(c) != 'Mn')
-
-    # Normalizar los nombres de las columnas
-    df.columns = [remover_tildes(col).lower() for col in df.columns]
-    
-    return df
-
-
 def estandarizar_marcas(df: pd.DataFrame) -> pd.DataFrame:
     """
     Esta función estandariza los nombres de marcas en una columna de un DataFrame de pandas
@@ -227,6 +204,37 @@ def estandarizar_modelos(df:pd.DataFrame):
     return df
 
 
+def normalizar_valores_columnas(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normaliza los valores de las columnas de un DataFrame.
+    Convierte los valores de tipo texto a minúsculas y elimina las tildes.
+
+    Parameters:
+    - df: pd.DataFrame
+        El DataFrame cuyos valores se normalizarán.
+
+    Retorna:
+    - pd.DataFrame
+        El DataFrame con los valores de las columnas de texto normalizados.
+    """
+    def remover_tildes(texto):
+        if isinstance(texto, str):
+            texto_normalizado = unicodedata.normalize('NFD', texto)
+            return ''.join(c for c in texto_normalizado if unicodedata.category(c) != 'Mn').lower()
+        return texto  # Si no es string, devolver el valor original
+
+    # Aplicar la normalización solo a las columnas de tipo 'object' (texto)
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].apply(remover_tildes)
+    
+    return df
+
+
+def transformar_anio(df:pd.DataFrame) -> pd.DataFrame:
+    """Convierte el año a un objeto date representando el primer día del año"""
+    df['anio'] = pd.to_datetime(df['anio'].astype(str) + '-01-01').dt.date
+    return df
+
 
 def transformar_precios(df: pd.Series) -> pd.Series:
     """
@@ -240,7 +248,15 @@ def transformar_precios(df: pd.Series) -> pd.Series:
     - pd.Dataframe
         Dataframe con la columna 'precio' en tipo 'int'.
     """
-    df['precio'] = df['Precio'].str.replace('$','').str.replace(',','')
+    df['precio'] = df['precio'].str.replace('$','').str.replace(',','')
     df['precio'] = df['precio'].astype(int)
 
     return df
+
+
+def selector_columnas(df:pd.DataFrame) -> pd.DataFrame:
+    mis_variables = ['marca','modelo','anio','carroceria','traccion','combustible','transmision',
+                     'asientos','color','kilometraje','verificacion','precio']
+    df = df[mis_variables].copy()
+
+    return df       
