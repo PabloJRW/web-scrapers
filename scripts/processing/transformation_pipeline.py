@@ -19,3 +19,4 @@ def transformation_pipeline(df):
         .pipe(tf.transformar_precios)
         .pipe(tf.selector_columnas)
     )
+

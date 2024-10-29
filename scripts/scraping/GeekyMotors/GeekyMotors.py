@@ -27,7 +27,7 @@ XPATH_COLOR = '//div[@class="car-specs"]/div[9]/div[@class="spec-value"]'
 XPATH_VERIFICACION = '//div[@class="score-value"]/div/span'
 XPATH_PRECIO = '//div[@class="price-values "]/div'
 
-CSV_FILENAME = "geeky_motors2.csv"
+CSV_FILENAME = "geeky_motors20.csv"
 CSV_HEADERS = ['Nombre', 'KM', 'Estado', 'Combustible','Carrocería', 'Tracción', 'Transmisión', 'Asientos',
                'Color', 'Verificación', 'Precio']
 
@@ -64,11 +64,11 @@ def obtener_autos(driver):
     try:
         # Espera a que el checkbox esté presente
         checkbox_label = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//div[@class="filter"][3]/div/label[1]'))
+            EC.presence_of_element_located((By.XPATH, '//div[@class="options-states"]/label[1]/input'))
         )
 
         # Encuentra el input del checkbox dentro del label
-        checkbox_nuevos = checkbox_label.find_element(By.XPATH, './/input[@type="checkbox"]')
+        checkbox_nuevos = checkbox_label.find_element(By.XPATH, '//div[@class="options-states"]/label[1]/input')
 
         # Asegurarse de que el elemento es visible
         driver.execute_script("arguments[0].scrollIntoView(true);", checkbox_nuevos)
@@ -84,7 +84,7 @@ def obtener_autos(driver):
         # Lista de los autos por pagina
         lista_autos = driver.find_elements(By.XPATH, XPATH_AUTOS)
 
-        for index, auto in enumerate(lista_autos):
+        for index, auto in enumerate(lista_autos)[:2]:
             try:
                 # Espera hasta que cargue las publicaciones
                 WebDriverWait(driver, 10).until(
@@ -131,7 +131,7 @@ def obtener_autos(driver):
                 print(nombre, km, estado, combustible, carroceria, traccion, transmision, asientos, color, verificacion, precio)
 
                 # Guarda la info de cada auto al archivo CSV
-                guardar_en_csv(autos_geeky, CSV_FILENAME)
+                #guardar_en_csv(autos_geeky, CSV_FILENAME)
 
                 driver.back()
             except StaleElementReferenceException:
