@@ -19,31 +19,46 @@ XPATH_MARCA = "//div[contains(@class, 'd3-property-details__detail-label') and c
 XPATH_MODELO = "//dl[contains(@class,'d3-property-insight__attribute-details')]/dt[text()='Modelo']/following-sibling::dd[1]"
 XPATH_ANIO = "//dl[contains(@class, 'd3-property-insight__attribute-details')]/dt[text() = 'Año']/following-sibling::dd[1]"
 XPATH_MOTOR = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Motor')]"
+XPATH_ESTILO = "//div[contains(@class, 'd3-property-details__detail-label') and normalize-space(text()) = 'Estilo']"
+XPATH_ESTILO_DEL_CHASIS = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Estilo del chasis')]"
+XPATH_TECHO = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Techo')]"
 XPATH_TRANSMISION = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Transmisión')]"
 XPATH_COMBUSTIBLE = "//dl[contains(@class,'d3-property-insight__attribute-details')]/dt[text()='Combustible']/following-sibling::dd[1]"
 XPATH_ASIENTOS = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Asientos')]"
 XPATH_KM = "//dl[contains(@class,'d3-property-insight__attribute-details')]/dt[text()='Kilómetros']/following-sibling::dd[1]"
-XPATH_TREN = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Tren')]"
+XPATH_TREN_DE_MANEJO = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Tren')]"
+XPATH_TIPO_VENDEDOR = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Tipo de vendedor')]"
+XPATH_PROPIETARIO = "//div[@class='d3-propertycontact__address-details']/a"
+XPATH_LOCALIZACION = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Localización')]"
+XPATH_PUBLICADO = "//div[contains(@class, 'd3-property-details__detail-label') and contains(text(), 'Publicao')]"
 XPATH_PRECIO = "//dl[contains(@class, 'd3-property-insight__attribute-details')]/dt[text() = 'Precio']/following-sibling::dd[1]"
 
 # XPath de botonesb
-XPATH_NEXT_BTN = '//div[@class="category-paginate--next old-device-flex-fix"]/a'
+XPATH_NEXT_BTN = "//div[@class='d3-pagination']/a[contains(@class,'arrow--next')]"
 XPATH_RETORNO = "//div[@class='d3-property-toolbar__item'][1]/a"
 
 NUM_PAGINA_DE_INICIO = 1  # Página en la que se empieza a extraer los datos
 CANTIDAD_DE_PAGINAS = 5  # Cantidad de páginas que se navegarán para extraer datos
 
 # Configuración del archivo CSV
-CSV_FILE = 'autos_usados_2.csv'
+CSV_FILE = 'test.csv'
 CSV_HEADERS = ['Marca', 'Modelo', 'Año', 'Motor', 'Transmision', 'Tren', 'Combustible', 'Asientos', 'KM', 'Precio']
 
 
 def setup_driver():
-    """Configura y devuelve el controlador de Selenium."""
-    opts = Options()
-    opts.add_argument(f"user-agent={USER_AGENT}")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opts)
-    return driver
+    """Sets up the Selenium WebDriver for Chrome."""
+    options = webdriver.ChromeOptions()
+    options.add_argument("--remote-allow-origins=*")
+
+    try:
+        # Initialize the WebDriver without specifying the driver path
+        driver = webdriver.Chrome(options=options)
+        print("WebDriver setup successful.")
+        return driver
+    except Exception as e:
+        print(f"Error setting up the driver: {e}")
+        raise
+
 
 
 def guardar_en_csv(data, filename):
@@ -67,15 +82,19 @@ def obtener_autos(driver):
 
         # Lista de los autos por página
         autos = driver.find_elements(By.XPATH, XPATH_AUTOS)
-
+        
         # Iteración sobre la lista de autos
         for index, auto in enumerate(autos):
             try:
+                print("Inicio ciclo for lista")
                 # Espera hasta que cargue la lista de autos
                 WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, XPATH_AUTOS)))
                 auto = driver.find_elements(By.XPATH, XPATH_AUTOS)[index]  # Reobtener el elemento
-                auto.click()
 
+                driver.execute_script("arguments[0].scrollIntoView(true);", auto)
+                auto.click()
+                print("despues del click")
+                print(driver.current_url)
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, XPATH_PRECIO))
                 )
@@ -86,7 +105,7 @@ def obtener_autos(driver):
                 transmision = driver.find_element(By.XPATH, XPATH_TRANSMISION).text
                 combustible = driver.find_element(By.XPATH, XPATH_COMBUSTIBLE).text
                 asientos = driver.find_element(By.XPATH, XPATH_ASIENTOS).text
-                tren = driver.find_element(By.XPATH, XPATH_TREN).text
+                tren = driver.find_element(By.XPATH, XPATH_TREN_DE_MANEJO).text
                 km = driver.find_element(By.XPATH, XPATH_KM).text
                 precio = driver.find_element(By.XPATH, XPATH_PRECIO).text
 
@@ -102,11 +121,7 @@ def obtener_autos(driver):
 
                 print(marca, modelo, anio, motor, transmision, combustible, tren, asientos, km, precio)
 
-                WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, XPATH_RETORNO))
-                )
-                btn_retorno = driver.find_element(By.XPATH, XPATH_RETORNO)
-                btn_retorno.click()
+                driver.back()
 
             except StaleElementReferenceException:
                 print("Elemento obsoleto encontrado, reintentando...")
@@ -156,8 +171,6 @@ def navegar_pagina(driver, num_pagina_inicio=NUM_PAGINA_DE_INICIO):
                 print("No se encontró el botón siguiente o no se puede hacer clic.")
     except Exception as e:
         print(f"Error navegando a la página {num_pagina_inicio}: {e}")
-
-    print("La extracción de datos ha finalizado exitosamente.")
 
 
 def main():
