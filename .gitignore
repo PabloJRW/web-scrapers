@@ -3,3 +3,7 @@
 scrapenv
 *.pyc
 __pycache__
+encuentravenv/
+etlvenv/
+geekyvenv/
+scrapenv/
